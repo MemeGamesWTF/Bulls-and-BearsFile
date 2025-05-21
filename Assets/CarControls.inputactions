@@ -1,0 +1,34 @@
+{
+    "name": "CarControls",
+    "maps": [
+        {
+            "name": "Player",
+            "id": "8db07c8a-e590-4058-8ea1-b0ea8e985d10",
+            "actions": [
+                {
+                    "name": "Move",
+                    "type": "Value",
+                    "id": "77c1ece1-2bca-4510-bfde-062fb21af012",
+                    "expectedControlType": "Vector2",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": true
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "7cadfa9d-f137-41eb-8c62-07d04025d5ed",
+                    "path": "<Gamepad>/leftStick",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Move",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
+        }
+    ],
+    "controlSchemes": []
+}
