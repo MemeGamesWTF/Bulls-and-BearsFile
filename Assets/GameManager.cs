@@ -75,7 +75,7 @@ public class GameManager : MonoBehaviour
     private void Start()
     {
         InfoScreen.SetActive(true);
-        StartCoroutine(SpawnFacesCoroutine());
+      //  StartCoroutine(SpawnFacesCoroutine());
         
         if (backgrounds == null || backgrounds.Length < 2)
         {
@@ -116,7 +116,7 @@ public class GameManager : MonoBehaviour
         }
 
 
-        timeScale += Time.deltaTime / 150f;
+        timeScale += Time.deltaTime / 70f;
         timeScale = Mathf.Clamp(timeScale, 0f, 2f);
         Time.timeScale = timeScale;
 
@@ -219,7 +219,7 @@ public class GameManager : MonoBehaviour
         GameState = false;
         GameWinScreen.SetActive(true);
         Debug.Log(currentScore);
-        SendScore(currentScore, 139);
+        SendScore(currentScore, 141);
     }
 
     public void GameOver()
@@ -228,7 +228,7 @@ public class GameManager : MonoBehaviour
         GameState = false;
         GameOverScreen.SetActive(true);
         Debug.Log(currentScore);
-        SendScore(currentScore, 139);
+        SendScore(currentScore, 141);
     }
 
     public void GameResetScreen()

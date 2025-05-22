@@ -1,88 +1,74 @@
 using UnityEngine;
-using UnityEngine.InputSystem.Interactions;
 
+[RequireComponent(typeof(Rigidbody2D))]
 public class BasePlayer : MonoBehaviour
 {
-    [Header("Lane Settings")]
-    // X positions for each lane
-    public float[] laneXPositions = new float[] { -2f, 0f, 2f };
-    // How fast to interpolate between lanes
-    public float laneSwitchSpeed = 10f;
-
-    private int currentLane = 1;    // start in middle lane (index 1)
-    private Vector3 targetPosition;
-    public float forwardSpeed = 5f;
-
+    [Header("Effects")]
     public ParticleSystem hit;
-
     public AudioSource coin;
 
-    void Start()
+    [Header("Bounds")]
+    public float minX = -5f;
+    public float maxX = 5f;
+
+    [Header("Physics Movement")]
+    public float acceleration = 50f;
+    public float maxSpeed = 5f;
+    // Set Linear Drag in the Rigidbody2D component (try ~5�10 to start)
+
+    Rigidbody2D rb;
+
+    [Tooltip("Constant upward speed")]
+    public float forwardSpeed = 2f;
+
+    Vector2 startPosition;
+    float startRotation;
+
+    void Awake()
     {
-        // Initialize car to middle lane
-        currentLane = 1;
-        targetPosition = new Vector3(laneXPositions[currentLane], transform.position.y, transform.position.z);
-        transform.position = targetPosition;
+        rb = GetComponent<Rigidbody2D>();
+        startPosition = rb.position;
+        startRotation = rb.rotation;
     }
 
-    void Update()
+    void FixedUpdate()
     {
         if (!GameManager.Instance.GameState)
             return;
 
+        // 1) Horizontal input-driven movement
+        float moveDir = GetHoldDirection();            // –1, 0 or +1
+        rb.AddForce(Vector2.right * moveDir * acceleration);
 
-        HandleInput();
-        MoveToLane();
-        MoveForward();
+        // 2) Clamp horizontal speed
+        float vx = Mathf.Clamp(rb.linearVelocity.x, -maxSpeed, maxSpeed);
+
+        // 3) Enforce constant forward (Y) speed
+        float vy = forwardSpeed;
+
+        rb.linearVelocity = new Vector2(vx, vy);
+
+        // 4) Clamp position to horizontal bounds
+        Vector2 pos = rb.position;
+        pos.x = Mathf.Clamp(pos.x, minX, maxX);
+        rb.position = pos;
     }
 
-    private void MoveForward()
+    private float GetHoldDirection()
     {
-        transform.Translate(Vector3.up * forwardSpeed * Time.deltaTime); // Moves upward on Y-axis
-    }
+        if (Input.GetMouseButton(0))
+            return (Input.mousePosition.x < Screen.width * 0.5f) ? -1f : 1f;
 
-    private void HandleInput()
-    {
-        // Move left
-        if (Input.GetKeyDown(KeyCode.LeftArrow) || Input.GetKeyDown(KeyCode.A))
+        if (Input.touchCount > 0)
         {
-            currentLane = Mathf.Clamp(currentLane - 1, 0, laneXPositions.Length - 1);
-            targetPosition = new Vector3(laneXPositions[currentLane], transform.position.y, transform.position.z);
+            var t = Input.GetTouch(0);
+            if (t.phase == TouchPhase.Began ||
+                t.phase == TouchPhase.Moved ||
+                t.phase == TouchPhase.Stationary)
+                return (t.position.x < Screen.width * 0.5f) ? -1f : 1f;
         }
-
-        // Move right
-        if (Input.GetKeyDown(KeyCode.RightArrow) || Input.GetKeyDown(KeyCode.D))
-        {
-            currentLane = Mathf.Clamp(currentLane + 1, 0, laneXPositions.Length - 1);
-            targetPosition = new Vector3(laneXPositions[currentLane], transform.position.y, transform.position.z);
-        }
+        return 0f;
     }
-
-    private void MoveToLane()
-    {
-        // Smoothly interpolate position towards the target lane
-        transform.position = Vector3.Lerp(
-            transform.position,
-            targetPosition,
-            Time.deltaTime * laneSwitchSpeed
-        );
-    }
-
-    public void MoveLeft() { 
-        ChangeLane(-1);
-        GameManager.Instance.Tap.Play();
-    }
-    public void MoveRight() { 
-        ChangeLane(+1);
-        GameManager.Instance.Tap.Play();
-    }
-
-    private void ChangeLane(int delta)
-    {
-        currentLane = Mathf.Clamp(currentLane + delta, 0, laneXPositions.Length - 1);
-        targetPosition = new Vector3(laneXPositions[currentLane], transform.position.y, transform.position.z);
-    }
-
     public void GameOver()
     {
         GameManager.Instance.GameOver();
@@ -90,30 +76,37 @@ public class BasePlayer : MonoBehaviour
 
     public void Reset()
     {
-        // Reset to middle lane on restart, if desired
-        currentLane = 1;
-        float startY = -2.38f;
-        targetPosition = new Vector3(laneXPositions[currentLane], startY, transform.position.z);
-        transform.position = targetPosition;
+        rb.position = startPosition;
+        rb.rotation = startRotation;
+
+        // 2) Clear out any velocity or momentum
+        rb.linearVelocity = Vector2.zero;
+        rb.angularVelocity = 0f;
+
+        // e.g. snap back to center lane
+        transform.position = new Vector3(0, transform.position.y, transform.position.z);
     }
 
-    private void OnCollisionEnter2D(Collision2D collision)
+  /*  private void OnCollisionEnter2D(Collision2D collision)
     {
         if (collision.gameObject.CompareTag("Bear"))
         {
             coin.Play();
             hit.Play();
             collision.gameObject.SetActive(false);
-            //GameManager.Instance.AddScore
+            // GameManager.Instance.AddScore();
         }
-
-    }
+    }*/
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
         if (collision.gameObject.CompareTag("Enemy"))
         {
+            hit.Play();
             GameOver();
         }
     }
 }
+
+    // � your GameOver(), Reset(), collision methods �
+
